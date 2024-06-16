@@ -23,7 +23,7 @@ class DensityCluster:
         Fit the DBSCAN algorithm on the provided data.
 
         Parameters:
-        data: array-like, shape (n_samples, 4)
+        data: array-like, shape (n_samples, 4)。
             Input data, where each row is (timestamp, ID, x, y).
 
         Returns:

@@ -4,47 +4,45 @@ import matplotlib.pyplot as plt
 import cv2
 
 
+# yimocc1
+
 class DensityCluster:
     def __init__(self, eps=0.5, min_samples=5):
         """
-        Initialize the density clustering algorithm with DBSCAN.
-
-        Parameters:
-        eps: float, default=0.5
-            The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-        min_samples: int, default=5
-            The number of samples in a neighborhood for a point to be considered as a core point.
+        定义核心参数
         """
         self.eps = eps
         self.min_samples = min_samples
 
     def fit(self, data):
         """
-        Fit the DBSCAN algorithm on the provided data.
-
-        Parameters:
-        data: array-like, shape (n_samples, 4)。
-            Input data, where each row is (timestamp, ID, x, y).
-
-        Returns:
-        clusters: dict
-            A dictionary where the key is the timestamp and the value is the cluster labels for that timestamp.
+        定义聚类函数
+        Input:data
+        Output:labels
         """
-        self.cluster_labels = {}
+        self.cluster_labels = {}  # 初始化标签
         unique_timestamps = np.unique(data[:, 0])
-        for timestamp in unique_timestamps:
-            timestamp_data = data[data[:, 0] == timestamp]
-            coordinates = timestamp_data[:, 2:4]
-            dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples)
-            labels = dbscan.fit_predict(coordinates)
+        for timestamp in unique_timestamps:  # 每个time_step进行一次聚类
+            timestamp_data = data[data[:, 0] == timestamp]  # 提取当前时刻行人样本
+            coordinates = timestamp_data[:, 2:4]  # 提取行人坐标
+            dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples)  # 调用DBSCAN聚类模型
+            labels = dbscan.fit_predict(coordinates)  # 预测当前时刻聚类结果
             self.cluster_labels[timestamp] = labels
-        return self.cluster_labels
+        return self.cluster_labels  # 返回标签
 
     def generate_video(self, data, output_filename='output.mp4', fps=20):
+        """
+        以一定帧率播放聚类后的行人轨迹
+        :param data:
+        :param output_filename:
+        :param fps:
+        :return: None
+        """
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        frame_size = (640, 480)
+        frame_size = (640, 480)  # 帧大小
         out = cv2.VideoWriter(output_filename, fourcc, fps, frame_size)
 
+        # 将坐标缩放至标准帧大小的相应位置
         min_x, min_y = np.min(data[:, 2:4], axis=0)
         max_x, max_y = np.max(data[:, 2:4], axis=0)
         data[:, 2] = (data[:, 2] - min_x) / (max_x - min_x) * frame_size[0]
@@ -82,15 +80,7 @@ class DensityCluster:
 
 def read_data_from_file(file_path):
     """
-    Read data from a TXT file.
-
-    Parameters:
-    file_path: str
-        Path to the TXT file containing the data.
-
-    Returns:
-    data: numpy array, shape (n_samples, 4)
-        Array containing the data read from the file, with columns (time_step, ID, x, y).
+    读取数据
     """
     data = []
     with open(file_path, 'r') as file:
@@ -104,11 +94,11 @@ def read_data_from_file(file_path):
 
 # Example usage
 if __name__ == "__main__":
-    file_path = 'students003.txt'  # Replace with your actual file path
+    file_path = 'students003.txt'  # 样本路径
     data = read_data_from_file(file_path)
 
-    density_cluster = DensityCluster(eps=0.8, min_samples=1)
-    clusters = density_cluster.fit(data)
+    density_cluster = DensityCluster(eps=0.8, min_samples=1)  # 初始化类
+    clusters = density_cluster.fit(data)  # 聚类
     print("Cluster labels by timestamp:", clusters)
 
-    density_cluster.generate_video(data, output_filename='clusters.mp4',fps=10)
+    density_cluster.generate_video(data, output_filename='clusters.mp4', fps=10)  # 播放结果
